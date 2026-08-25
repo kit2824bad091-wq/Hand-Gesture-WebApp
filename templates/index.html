@@ -2,39 +2,332 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Hand Gesture Recognition</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <title>
+        Hand Gesture Recognition
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
 </head>
 
 <body>
 
-    <h1>Hand Gesture Recognition</h1>
+<div class="container">
 
-    <h2>AI Based Hand Gesture Detection System</h2>
+    <h1>
+        Hand Gesture Recognition
+    </h1>
 
-    <p>
-    This web application detects and recognizes hand gestures
-    using Python, OpenCV and MediaPipe.
-</p>
+    <h2 class="subtitle">
+        AI Based Hand Gesture Detection System
+    </h2>
 
-<div class="camera-box">
-    <img src="{{ url_for('video_feed') }}" alt="Live Camera">
+    <p class="description">
+
+        This web application detects and recognizes
+        hand gestures using Python, OpenCV,
+        MediaPipe and Flask.
+
+    </p>
+
+
+    <div class="camera-box">
+
+        <video
+            id="video"
+            autoplay
+            playsinline
+        >
+        </video>
+
+        <canvas
+            id="canvas"
+            style="display:none;"
+        >
+        </canvas>
+
+
+        <div class="result-box">
+
+            <h2 id="gesture-result">
+
+                Gesture: Waiting...
+
+            </h2>
+
+            <p id="finger-result">
+
+                Fingers: 0
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <h3>
+        Supported Gestures
+    </h3>
+
+
+    <div class="gestures">
+
+        <p>
+            🖐️ Open Palm
+        </p>
+
+        <p>
+            ✊ Fist
+        </p>
+
+        <p>
+            ✌️ Victory
+        </p>
+
+        <p>
+            ☝️ Pointing
+        </p>
+
+        <p>
+            👍 Thumbs Up
+        </p>
+
+    </div>
+
 </div>
 
-<h3>Supported Gestures</h3>
 
-<div class="gestures">
-    <p>🖐️ Open Palm</p>
-    <p>✊ Fist</p>
-    <p>✌️ Victory</p>
-    <p>☝️ Pointing</p>
-    <p>👍 Thumbs Up</p>
-</div>
+<script>
+
+const video =
+    document.getElementById(
+        "video"
+    );
+
+const canvas =
+    document.getElementById(
+        "canvas"
+    );
+
+const gestureResult =
+    document.getElementById(
+        "gesture-result"
+    );
+
+const fingerResult =
+    document.getElementById(
+        "finger-result"
+    );
+
+
+let requestRunning = false;
+
+
+// ------------------------------------
+// Start browser camera
+// ------------------------------------
+
+navigator.mediaDevices
+.getUserMedia({
+
+    video: {
+        facingMode: "user"
+    },
+
+    audio: false
+
+})
+
+.then(stream => {
+
+    video.srcObject = stream;
+
+    gestureResult.innerText =
+        "Gesture: No Hand";
+
+})
+
+.catch(error => {
+
+    console.log(
+        "Camera Error:",
+        error
+    );
+
+    gestureResult.innerText =
+        "Camera permission denied";
+
+});
+
+
+// ------------------------------------
+// Send frame to Flask
+// ------------------------------------
+
+async function sendFrame() {
+
+    if (requestRunning) {
+
+        return;
+
+    }
+
+
+    if (
+        video.videoWidth === 0
+        ||
+        video.videoHeight === 0
+    ) {
+
+        return;
+
+    }
+
+
+    requestRunning = true;
+
+
+    canvas.width =
+        video.videoWidth;
+
+    canvas.height =
+        video.videoHeight;
+
+
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
+
+
+    // Mirror before sending
+    ctx.save();
+
+    ctx.translate(
+        canvas.width,
+        0
+    );
+
+    ctx.scale(
+        -1,
+        1
+    );
+
+
+    ctx.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    ctx.restore();
+
+
+    const imageData =
+        canvas.toDataURL(
+            "image/jpeg",
+            0.75
+        );
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/predict",
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                        "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            image:
+                                imageData
+
+                        })
+
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Prediction request failed"
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        gestureResult.innerText =
+            "Gesture: "
+            +
+            data.gesture;
+
+
+        fingerResult.innerText =
+            "Fingers: "
+            +
+            data.fingers;
+
+    }
+
+    catch (error) {
+
+        console.log(
+            "Prediction Error:",
+            error
+        );
+
+        gestureResult.innerText =
+            "Gesture: Error";
+
+    }
+
+    finally {
+
+        requestRunning = false;
+
+    }
+
+}
+
+
+// Run prediction repeatedly
+
+setInterval(
+    sendFrame,
+    600
+);
+
+</script>
 
 </body>
 
