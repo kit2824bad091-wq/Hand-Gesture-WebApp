@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Hand Gesture Recognition</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <h1>Hand Gesture Recognition</h1>
+
+    <h2>AI Based Hand Gesture Detection System</h2>
+
+    <p>
+    This web application detects and recognizes hand gestures
+    using Python, OpenCV and MediaPipe.
+</p>
+
+<div class="camera-box">
+    <img src="{{ url_for('video_feed') }}" alt="Live Camera">
+</div>
+
+<h3>Supported Gestures</h3>
+
+<div class="gestures">
+    <p>🖐️ Open Palm</p>
+    <p>✊ Fist</p>
+    <p>✌️ Victory</p>
+    <p>☝️ Pointing</p>
+    <p>👍 Thumbs Up</p>
+</div>
+
+</body>
+
+</html>
