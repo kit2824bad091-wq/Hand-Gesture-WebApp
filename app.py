@@ -13,6 +13,7 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=True,
     max_num_hands=1,
+    model_complexity=0,
     min_detection_confidence=0.3
 )
 
@@ -76,12 +77,24 @@ def distance(a, b):
 
 
 def recognize_gesture(frame):
+
     frame = cv2.resize(frame, (640, 480))
+
     rgb_frame = cv2.cvtColor(
         frame,
         cv2.COLOR_BGR2RGB
     )
+    
+    rgb_frame.flags.writeable = False
 
+    with mediapipe_lock:
+        results = hands.process(rgb_frame)
+
+    rgb_frame.flags.writeable = True
+
+    if not results.multi_hand_landmarks:
+        return "No Hand", 0
+    
     with mediapipe_lock:
 
         results = hands.process(
