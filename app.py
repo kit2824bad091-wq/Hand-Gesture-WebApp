@@ -13,7 +13,7 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=True,
     max_num_hands=1,
-    min_detection_confidence=0.5
+    min_detection_confidence=0.3
 )
 
 mediapipe_lock = threading.Lock()
@@ -76,7 +76,7 @@ def distance(a, b):
 
 
 def recognize_gesture(frame):
-
+    frame = cv2.resize(frame, (640, 480))
     rgb_frame = cv2.cvtColor(
         frame,
         cv2.COLOR_BGR2RGB
